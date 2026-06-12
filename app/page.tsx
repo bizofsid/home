@@ -2,18 +2,20 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { ChatSession } from "./types";
+import { ChatSession, HouseholdState } from "./types";
 import { deleteSession, getSessions, saveSession } from "@/lib/storage";
 import { getApiKey } from "@/lib/anthropic";
+import { getHousehold } from "@/lib/household";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
 import ApiKeyModal from "@/components/ApiKeyModal";
+import DayPanel from "@/components/DayPanel";
 
 function newSession(): ChatSession {
   const now = Date.now();
   return {
     id: uuidv4(),
-    title: "New Trip Plan",
+    title: "New Conversation",
     messages: [],
     createdAt: now,
     updatedAt: now,
@@ -26,6 +28,8 @@ export default function Home() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [hasKey, setHasKey] = useState(true);
+  const [household, setHousehold] = useState<HouseholdState | null>(null);
+  const [dayBoardOpen, setDayBoardOpen] = useState(false);
 
   useEffect(() => {
     const stored = getSessions();
@@ -37,10 +41,15 @@ export default function Home() {
       setSessions([s]);
       setActiveId(s.id);
     }
+    setHousehold(getHousehold());
     if (!getApiKey()) {
       setHasKey(false);
       setShowKeyModal(true);
     }
+  }, []);
+
+  const refreshHousehold = useCallback(() => {
+    setHousehold(getHousehold());
   }, []);
 
   const activeSession = sessions.find((s) => s.id === activeId) ?? null;
@@ -115,11 +124,11 @@ export default function Home() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile top bar */}
-        <div className="md:hidden px-4 py-3 border-b border-gray-200 flex items-center gap-3 flex-shrink-0">
+        {/* Compact top bar (sidebar toggle + day board toggle) */}
+        <div className="xl:hidden px-4 py-3 border-b border-gray-200 flex items-center gap-3 flex-shrink-0">
           <button
             onClick={() => setMobileOpen(true)}
-            className="p-1.5 rounded-lg hover:bg-gray-100"
+            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100"
           >
             <svg
               className="w-5 h-5"
@@ -135,15 +144,31 @@ export default function Home() {
               />
             </svg>
           </button>
-          <span className="font-semibold text-gray-800">✈️ Itinerant</span>
+          <span className="font-semibold text-gray-800">🗝️ Itinerant</span>
+          <button
+            onClick={() => setDayBoardOpen((v) => !v)}
+            className="ml-auto rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600"
+          >
+            {dayBoardOpen ? "Chat" : "Day Board"}
+          </button>
         </div>
 
         {activeSession && (
-          <ChatArea
-            session={activeSession}
-            onUpdate={handleUpdate}
-            onNeedKey={() => setShowKeyModal(true)}
-          />
+          <div className="flex min-h-0 flex-1">
+            <div className={`min-w-0 flex-1 ${dayBoardOpen ? "hidden xl:flex xl:flex-col" : "flex flex-col"}`}>
+              <ChatArea
+                session={activeSession}
+                onUpdate={handleUpdate}
+                onNeedKey={() => setShowKeyModal(true)}
+                onHouseholdChange={refreshHousehold}
+              />
+            </div>
+            {household && (
+              <div className={`${dayBoardOpen ? "flex w-full xl:w-auto" : "hidden xl:flex"}`}>
+                <DayPanel state={household} onChange={setHousehold} />
+              </div>
+            )}
+          </div>
         )}
       </div>
 

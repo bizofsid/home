@@ -41,15 +41,18 @@ export default function Sidebar({
     <div className="w-72 bg-gray-900 text-white flex flex-col h-full">
       {/* Header */}
       <div className="p-4 border-b border-gray-700">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-xl">✈️</span>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="text-xl">🗝️</span>
           <h1 className="font-bold text-lg">Itinerant</h1>
         </div>
+        <p className="text-[11px] text-gray-500 mb-3 tracking-wide uppercase">
+          Private Office
+        </p>
         <button
           onClick={onNew}
           className="w-full py-2 px-3 bg-indigo-600 hover:bg-indigo-500 rounded-lg text-sm font-medium transition-colors"
         >
-          + New Trip Plan
+          + New Conversation
         </button>
       </div>
 
@@ -122,7 +125,7 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto p-2">
           {sessions.length === 0 ? (
             <p className="text-xs text-gray-500 text-center mt-8 px-4">
-              Start a new trip plan to get going!
+              Brief your EA to get the day moving.
             </p>
           ) : (
             sessions.map((s) => (

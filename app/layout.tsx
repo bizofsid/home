@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Itinerant — AI Travel Planner",
-  description: "Plan your perfect trip with AI-powered itinerary assistance",
+  title: "Itinerant — Your Handheld EA",
+  description:
+    "Organize your day across your assets, allocate staff by geography, and dispatch cues — an AI executive assistant in your pocket.",
 };
 
 export default function RootLayout({

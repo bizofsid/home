@@ -11,16 +11,17 @@ interface Props {
   session: ChatSession;
   onUpdate: (session: ChatSession) => void;
   onNeedKey: () => void;
+  onHouseholdChange: () => void;
 }
 
 const SUGGESTIONS = [
-  "Plan a 7-day trip to Japan in spring",
-  "Weekend getaway from NYC on a budget",
-  "Best places to visit in Southeast Asia",
-  "Road trip through the American Southwest",
+  "Wheels up at 9 to the yacht — brief the crew and have the car ready at 7:30",
+  "Is the summer house cleaned? If not, get it handled",
+  "Dinner for six at the penthouse tonight, 8pm — omakase",
+  "Log my new Aspen chalet and the two snowmobiles there",
 ];
 
-export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
+export default function ChatArea({ session, onUpdate, onNeedKey, onHouseholdChange }: Props) {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
@@ -67,7 +68,8 @@ export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
     try {
       const full = await streamChat(
         updated.messages.map((m) => ({ role: m.role, content: m.content })),
-        setStreamContent
+        setStreamContent,
+        onHouseholdChange
       );
 
       const assistantMsg: Message = {
@@ -118,7 +120,7 @@ export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 flex-shrink-0">
         <h2 className="font-semibold text-gray-800 truncate">
-          {isEmpty ? "New Trip Plan" : session.title}
+          {isEmpty ? "New Conversation" : session.title}
         </h2>
         <p className="text-xs text-gray-400 mt-0.5">
           {session.messages.length} message{session.messages.length !== 1 ? "s" : ""}
@@ -129,13 +131,13 @@ export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
       <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
         {isEmpty && !streaming ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
-            <div className="text-5xl mb-4">✈️</div>
+            <div className="text-5xl mb-4">🗝️</div>
             <h3 className="text-xl font-semibold text-gray-700 mb-2">
-              Where do you want to go?
+              What does today look like?
             </h3>
             <p className="text-gray-500 mb-8 max-w-md">
-              Tell me your dream destination and I&apos;ll help you plan the
-              perfect itinerary.
+              Your EA is standing by — schedule the day, position your assets,
+              and cue your staff. I&apos;ll handle the dispatch.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-lg">
               {SUGGESTIONS.map((s) => (
@@ -203,7 +205,7 @@ export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Ask about destinations, activities, or let me plan your trip…"
+            placeholder="Brief your EA — schedule, staff cues, asset moves…"
             rows={1}
             className="flex-1 resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 max-h-32 overflow-y-auto"
             style={{ minHeight: "48px" }}
