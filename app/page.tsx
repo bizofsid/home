@@ -4,8 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { ChatSession } from "./types";
 import { deleteSession, getSessions, saveSession } from "@/lib/storage";
+import { getApiKey } from "@/lib/anthropic";
 import Sidebar from "@/components/Sidebar";
 import ChatArea from "@/components/ChatArea";
+import ApiKeyModal from "@/components/ApiKeyModal";
 
 function newSession(): ChatSession {
   const now = Date.now();
@@ -22,6 +24,8 @@ export default function Home() {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [showKeyModal, setShowKeyModal] = useState(false);
+  const [hasKey, setHasKey] = useState(true);
 
   useEffect(() => {
     const stored = getSessions();
@@ -32,6 +36,10 @@ export default function Home() {
       const s = newSession();
       setSessions([s]);
       setActiveId(s.id);
+    }
+    if (!getApiKey()) {
+      setHasKey(false);
+      setShowKeyModal(true);
     }
   }, []);
 
@@ -101,6 +109,7 @@ export default function Home() {
           onNew={handleNew}
           onDelete={handleDelete}
           onSearchNavigate={handleSearchNavigate}
+          onOpenKeySettings={() => setShowKeyModal(true)}
         />
       </div>
 
@@ -130,9 +139,23 @@ export default function Home() {
         </div>
 
         {activeSession && (
-          <ChatArea session={activeSession} onUpdate={handleUpdate} />
+          <ChatArea
+            session={activeSession}
+            onUpdate={handleUpdate}
+            onNeedKey={() => setShowKeyModal(true)}
+          />
         )}
       </div>
+
+      {showKeyModal && (
+        <ApiKeyModal
+          onSaved={() => {
+            setHasKey(true);
+            setShowKeyModal(false);
+          }}
+          onClose={hasKey ? () => setShowKeyModal(false) : undefined}
+        />
+      )}
     </div>
   );
 }

@@ -4,11 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { ChatSession, Message } from "@/app/types";
 import { saveSession } from "@/lib/storage";
+import { getApiKey, streamChat } from "@/lib/anthropic";
 import ChatMessage from "./ChatMessage";
 
 interface Props {
   session: ChatSession;
   onUpdate: (session: ChatSession) => void;
+  onNeedKey: () => void;
 }
 
 const SUGGESTIONS = [
@@ -18,10 +20,11 @@ const SUGGESTIONS = [
   "Road trip through the American Southwest",
 ];
 
-export default function ChatArea({ session, onUpdate }: Props) {
+export default function ChatArea({ session, onUpdate, onNeedKey }: Props) {
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
   const [streamContent, setStreamContent] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -31,6 +34,12 @@ export default function ChatArea({ session, onUpdate }: Props) {
 
   async function sendMessage(text: string) {
     if (!text.trim() || streaming) return;
+
+    if (!getApiKey()) {
+      onNeedKey();
+      return;
+    }
+    setError(null);
 
     const userMsg: Message = {
       id: uuidv4(),
@@ -56,29 +65,10 @@ export default function ChatArea({ session, onUpdate }: Props) {
     setStreamContent("");
 
     try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: updated.messages.map((m) => ({
-            role: m.role,
-            content: m.content,
-          })),
-        }),
-      });
-
-      if (!res.body) throw new Error("No response body");
-
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let full = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        full += decoder.decode(value, { stream: true });
-        setStreamContent(full);
-      }
+      const full = await streamChat(
+        updated.messages.map((m) => ({ role: m.role, content: m.content })),
+        setStreamContent
+      );
 
       const assistantMsg: Message = {
         id: uuidv4(),
@@ -97,6 +87,17 @@ export default function ChatArea({ session, onUpdate }: Props) {
       saveSession(withResponse);
     } catch (err) {
       console.error(err);
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes("authentication") || msg.includes("invalid x-api-key")) {
+        setError("Your API key was rejected. Check it and try again.");
+        onNeedKey();
+      } else if (msg.includes("credit balance")) {
+        setError(
+          "Your Anthropic account is out of credits. Top up at console.anthropic.com."
+        );
+      } else {
+        setError(`Something went wrong: ${msg}`);
+      }
     } finally {
       setStreaming(false);
       setStreamContent("");
@@ -184,6 +185,18 @@ export default function ChatArea({ session, onUpdate }: Props) {
 
       {/* Input */}
       <div className="px-6 py-4 border-t border-gray-200 flex-shrink-0">
+        {error && (
+          <div className="mb-3 px-4 py-2.5 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 flex items-start gap-2">
+            <span>⚠️</span>
+            <span>{error}</span>
+            <button
+              onClick={() => setError(null)}
+              className="ml-auto text-red-400 hover:text-red-600"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <div className="flex gap-2 items-end">
           <textarea
             ref={textareaRef}

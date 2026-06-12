@@ -11,6 +11,7 @@ interface Props {
   onNew: () => void;
   onDelete: (id: string) => void;
   onSearchNavigate: (sessionId: string) => void;
+  onOpenKeySettings: () => void;
 }
 
 export default function Sidebar({
@@ -20,6 +21,7 @@ export default function Sidebar({
   onNew,
   onDelete,
   onSearchNavigate,
+  onOpenKeySettings,
 }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -166,6 +168,16 @@ export default function Sidebar({
           )}
         </div>
       )}
+
+      {/* Footer */}
+      <div className="p-3 border-t border-gray-700">
+        <button
+          onClick={onOpenKeySettings}
+          className="w-full text-left px-2 py-1.5 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+        >
+          🔑 API key settings
+        </button>
+      </div>
     </div>
   );
 }
