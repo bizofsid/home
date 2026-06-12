@@ -1,5 +1,7 @@
 "use client";
 
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { Message } from "@/app/types";
 
 interface Props {
@@ -17,13 +19,19 @@ export default function ChatMessage({ message }: Props) {
         </div>
       )}
       <div
-        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+        className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
           isUser
-            ? "bg-indigo-600 text-white rounded-br-sm"
-            : "bg-gray-100 text-gray-800 rounded-bl-sm"
+            ? "bg-indigo-600 text-white rounded-br-sm whitespace-pre-wrap"
+            : "bg-gray-100 text-gray-800 rounded-bl-sm markdown-body"
         }`}
       >
-        {message.content}
+        {isUser ? (
+          message.content
+        ) : (
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {message.content}
+          </ReactMarkdown>
+        )}
       </div>
       {isUser && (
         <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0 mt-1">

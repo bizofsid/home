@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { ChatSession, SearchResult } from "@/app/types";
-import { searchSessions, deleteSession } from "@/lib/storage";
+import { searchSessions } from "@/lib/storage";
 
 interface Props {
   sessions: ChatSession[];
@@ -86,6 +86,13 @@ export default function Sidebar({
       </div>
 
       {/* Search Results */}
+      {query && results.length === 0 && (
+        <div className="flex-1 p-4">
+          <p className="text-xs text-gray-500 text-center mt-4">
+            No messages match &ldquo;{query}&rdquo;
+          </p>
+        </div>
+      )}
       {results.length > 0 && (
         <div className="flex-1 overflow-y-auto p-2">
           <p className="text-xs text-gray-500 px-2 mb-2">
