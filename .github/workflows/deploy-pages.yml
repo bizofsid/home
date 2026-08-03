@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/devonport-dollar-flow-app-ds2dfe
+      - claude/search-chat-itinerant-app-z9fkz2
       - main
   workflow_dispatch:
 
