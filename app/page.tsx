@@ -1,186 +1,142 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
-import { v4 as uuidv4 } from "uuid";
-import { ChatSession, HouseholdState } from "./types";
-import { deleteSession, getSessions, saveSession } from "@/lib/storage";
-import { getApiKey } from "@/lib/anthropic";
-import { getHousehold } from "@/lib/household";
-import Sidebar from "@/components/Sidebar";
-import ChatArea from "@/components/ChatArea";
-import ApiKeyModal from "@/components/ApiKeyModal";
-import DayPanel from "@/components/DayPanel";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { fetchBusinesses, fetchPurchases, fetchSupplierLinks } from "@/lib/queries";
+import { Business, BusinessSupplier, Purchase } from "@/lib/types";
+import { flowScore, sortByFlowScore } from "@/lib/flow";
+import { formatNZD } from "@/lib/format";
+import StatTile from "@/components/StatTile";
+import FlowBar from "@/components/FlowBar";
+import NetworkGraph from "@/components/NetworkGraph";
 
-function newSession(): ChatSession {
-  const now = Date.now();
-  return {
-    id: uuidv4(),
-    title: "New Conversation",
-    messages: [],
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
-export default function Home() {
-  const [sessions, setSessions] = useState<ChatSession[]>([]);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
-  const [hasKey, setHasKey] = useState(true);
-  const [household, setHousehold] = useState<HouseholdState | null>(null);
-  const [dayBoardOpen, setDayBoardOpen] = useState(false);
+export default function Dashboard() {
+  const [businesses, setBusinesses] = useState<Business[]>([]);
+  const [links, setLinks] = useState<BusinessSupplier[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
 
   useEffect(() => {
-    const stored = getSessions();
-    if (stored.length > 0) {
-      setSessions(stored);
-      setActiveId(stored[0].id);
-    } else {
-      const s = newSession();
-      setSessions([s]);
-      setActiveId(s.id);
-    }
-    setHousehold(getHousehold());
-    if (!getApiKey()) {
-      setHasKey(false);
-      setShowKeyModal(true);
-    }
+    Promise.all([fetchBusinesses(), fetchSupplierLinks(), fetchPurchases()])
+      .then(([b, l, p]) => {
+        setBusinesses(b);
+        setLinks(l);
+        setPurchases(p);
+        setStatus("ready");
+      })
+      .catch(() => setStatus("error"));
   }, []);
 
-  const refreshHousehold = useCallback(() => {
-    setHousehold(getHousehold());
-  }, []);
-
-  const activeSession = sessions.find((s) => s.id === activeId) ?? null;
-
-  function handleNew() {
-    const s = newSession();
-    setSessions((prev) => [s, ...prev]);
-    setActiveId(s.id);
-    setMobileOpen(false);
-  }
-
-  function handleSelect(id: string) {
-    setActiveId(id);
-    setMobileOpen(false);
-  }
-
-  function handleDelete(id: string) {
-    deleteSession(id);
-    setSessions((prev) => {
-      const next = prev.filter((s) => s.id !== id);
-      if (activeId === id) {
-        if (next.length > 0) {
-          setActiveId(next[0].id);
-        } else {
-          const s = newSession();
-          saveSession(s);
-          setActiveId(s.id);
-          return [s];
-        }
-      }
-      return next;
-    });
-  }
-
-  const handleUpdate = useCallback((updated: ChatSession) => {
-    setSessions((prev) =>
-      prev.map((s) => (s.id === updated.id ? updated : s))
-    );
-  }, []);
-
-  function handleSearchNavigate(sessionId: string) {
-    setActiveId(sessionId);
-    setMobileOpen(false);
-  }
+  const byId = new Map(businesses.map((b) => [b.id, b]));
+  const totalLogged = purchases.reduce((sum, p) => sum + Number(p.amount), 0);
+  const estimatedRecirculation = purchases.reduce((sum, p) => {
+    const business = byId.get(p.business_id);
+    return sum + Number(p.amount) * (business ? flowScore(business) : 1);
+  }, 0);
+  const avgFlow =
+    businesses.length > 0
+      ? businesses.reduce((sum, b) => sum + flowScore(b), 0) / businesses.length
+      : 0;
+  const topFlow = sortByFlowScore(businesses).slice(0, 5);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-20 md:hidden"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
-      <div
-        className={`${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0 fixed md:relative z-30 md:z-auto h-full transition-transform duration-200`}
-      >
-        <Sidebar
-          sessions={sessions}
-          activeId={activeId}
-          onSelect={handleSelect}
-          onNew={handleNew}
-          onDelete={handleDelete}
-          onSearchNavigate={handleSearchNavigate}
-          onOpenKeySettings={() => setShowKeyModal(true)}
-        />
-      </div>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Compact top bar (sidebar toggle + day board toggle) */}
-        <div className="xl:hidden px-4 py-3 border-b border-gray-200 flex items-center gap-3 flex-shrink-0">
-          <button
-            onClick={() => setMobileOpen(true)}
-            className="md:hidden p-1.5 rounded-lg hover:bg-gray-100"
+    <div className="mx-auto max-w-5xl px-4 py-8 space-y-10">
+      <section>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          If our dollars leave Devonport in hours, we&apos;re the problem.
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-ink-secondary">
+          This tracks how spending moves through Devonport&apos;s own business
+          network — and points you toward the businesses that keep dollars
+          circulating locally the longest, instead of letting them leak out
+          on the first trip to the mainland chains.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <Link
+            href="/log"
+            className="rounded-md bg-accent px-3 py-2 text-sm font-medium text-white"
           >
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
-          </button>
-          <span className="font-semibold text-gray-800">🗝️ Itinerant</span>
-          <button
-            onClick={() => setDayBoardOpen((v) => !v)}
-            className="ml-auto rounded-lg bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-600"
+            Log a purchase
+          </Link>
+          <Link
+            href="/recommend"
+            className="rounded-md border border-line px-3 py-2 text-sm font-medium"
           >
-            {dayBoardOpen ? "Chat" : "Day Board"}
-          </button>
+            Where should I spend?
+          </Link>
+          <Link
+            href="/join"
+            className="rounded-md border border-line px-3 py-2 text-sm font-medium"
+          >
+            Add your business
+          </Link>
         </div>
+      </section>
 
-        {activeSession && (
-          <div className="flex min-h-0 flex-1">
-            <div className={`min-w-0 flex-1 ${dayBoardOpen ? "hidden xl:flex xl:flex-col" : "flex flex-col"}`}>
-              <ChatArea
-                session={activeSession}
-                onUpdate={handleUpdate}
-                onNeedKey={() => setShowKeyModal(true)}
-                onHouseholdChange={refreshHousehold}
-              />
-            </div>
-            {household && (
-              <div className={`${dayBoardOpen ? "flex w-full xl:w-auto" : "hidden xl:flex"}`}>
-                <DayPanel state={household} onChange={setHousehold} />
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {showKeyModal && (
-        <ApiKeyModal
-          onSaved={() => {
-            setHasKey(true);
-            setShowKeyModal(false);
-          }}
-          onClose={hasKey ? () => setShowKeyModal(false) : undefined}
-        />
+      {status === "error" && (
+        <p className="text-sm text-red-600">
+          Couldn&apos;t load live data right now — try refreshing.
+        </p>
       )}
+
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <StatTile label="Businesses in network" value={String(businesses.length)} />
+        <StatTile
+          label="Dollars logged"
+          value={formatNZD(totalLogged)}
+          caption={`${purchases.length} purchase${purchases.length === 1 ? "" : "s"} logged`}
+        />
+        <StatTile
+          label="Est. local recirculation"
+          value={formatNZD(estimatedRecirculation)}
+          caption="Logged spend × each business's flow score"
+        />
+        <StatTile label="Avg. network flow score" value={`${avgFlow.toFixed(2)}x`} />
+      </section>
+
+      {purchases.length === 0 && status === "ready" && (
+        <p className="text-sm text-ink-secondary">
+          Nobody has logged a purchase yet —{" "}
+          <Link href="/log" className="text-accent underline">
+            be the first
+          </Link>
+          .
+        </p>
+      )}
+
+      <section>
+        <h2 className="text-lg font-semibold">Best flow in the network</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Ranked by flow score — an estimate of how many times a dollar spent
+          there recirculates locally before it leaves Devonport, based on
+          each business&apos;s self-reported local respend rate.
+        </p>
+        <ul className="mt-4 space-y-3">
+          {topFlow.map((b) => (
+            <li key={b.id}>
+              <Link href={`/business?id=${b.id}`} className="block hover:opacity-80">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">{b.name}</span>
+                  <span className="text-ink-muted">{b.category}</span>
+                </div>
+                <div className="mt-1">
+                  <FlowBar score={flowScore(b)} />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold">The local network</h2>
+        <p className="mt-1 text-sm text-ink-secondary">
+          Who buys from whom, so far.
+        </p>
+        <div className="mt-4">
+          <NetworkGraph businesses={businesses} links={links} />
+        </div>
+      </section>
     </div>
   );
 }
