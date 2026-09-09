@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Devonport Dollar Flow",
+  title: "Fit Preview",
   description:
-    "Keep Devonport's spending circulating in Devonport — a local business network and flow-tracking tool for the village.",
+    "Preview how an item will fit before you order it — enter your measurements once, then check any retailer's size chart against them.",
 };
 
 export default function RootLayout({
@@ -33,9 +33,8 @@ export default function RootLayout({
         <Nav />
         <main className="flex-1 min-w-0">{children}</main>
         <footer className="border-t border-line px-4 py-6 text-center text-xs text-ink-muted">
-          Devonport Dollar Flow — a community project for Devonport, Auckland.
-          Directory started with hand-written sample listings; businesses join
-          themselves from here on.
+          Fit Preview — your measurements stay in your browser. Fit estimates
+          are a heuristic, not a guarantee.
         </footer>
       </body>
     </html>

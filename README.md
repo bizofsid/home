@@ -1,53 +1,45 @@
-# 💸 Devonport Dollar Flow
+# 👕 Fit Preview
 
-A local-business network for Devonport, Auckland, built on one idea: money
-that recirculates inside the community does more good than money that leaves
-on the first trip out. This app tracks purchases, scores each business by how
-much of its revenue it respends locally, and points spending toward whoever
-keeps dollars circulating longest.
+Ordering clothes online is a guess — sizes vary by brand, and the only
+feedback loop is a parcel that doesn't fit. Fit Preview closes that loop
+before you buy: enter your body measurements once, then check any
+retailer's size chart against them for a zone-by-zone preview of how each
+size will actually sit.
 
 ## How it works
 
-- **Directory** — every business in the network, searchable and filterable.
-- **Flow score** — each business self-reports the % of revenue it respends
-  with other Devonport businesses. That feeds a simplified [Local Multiplier
-  3](https://neweconomics.org/) calculation: `1 + r + r²`, estimating how many
-  times a dollar recirculates locally before it leaves.
-- **Recommend** — pick a category, get businesses ranked by flow score, with
-  the local supply chain it likely flows to next.
-- **Network graph** — a live map of who buys from whom locally.
-- **Log a purchase / Join the network** — no accounts, no verification. This
-  is built for a community where trust is already high; the flow score only
-  means something if people are honest about it.
+- **Your measurements** — height, chest/bust, waist, hips, and inseam, plus
+  how snug you like clothes to fit. Saved only in `localStorage`; nothing is
+  ever sent anywhere.
+- **Check a size chart** — paste in a brand's size chart (chest/waist/hips/
+  length per size) and get an instant, size-by-size fit preview: a
+  recommended size, a garment-shaped diagram colored by zone, and a
+  too-tight ↔ too-loose reading for chest, waist, hips, and length.
+- **Catalog** — a handful of hand-written example garments to try the tool
+  on, plus anything you've checked and chosen to save for later.
 
-The starter directory (~18 businesses) is hand-written sample data clearly
-marked as seed data, not scraped real listings — the network is meant to grow
-from real Devonport businesses joining themselves.
+The fit model estimates "ease" (garment measurement minus body measurement)
+per zone and classifies it against what a fitted, regular, or relaxed cut
+is expected to allow, shifted by your stated fit preference. It's a
+heuristic based on the numbers you give it — not a guarantee, and no
+substitute for a brand's own fit notes when they're more specific.
 
 ## Getting Started
 
-Requires Node.js 18+.
+Requires Node.js 20.9+.
 
 ```bash
 git clone https://github.com/bizofsid/home.git
 cd home
-git checkout claude/devonport-dollar-flow-app-ds2dfe
 npm install
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-Data is stored in Supabase (Postgres) and shared across everyone using the
-app — the client connects with a public, RLS-protected key checked into
-`lib/supabase.ts`, so no `.env` setup is required to run it locally. Row-level
-security allows public read/insert on `businesses`, `business_suppliers` and
-`purchases`, and denies update/delete — matching the trust-based, no-auth
-design.
-
 ## Stack
 
-- [Next.js](https://nextjs.org) (App Router) + TypeScript + Tailwind CSS,
+- [Next.js 16](https://nextjs.org) (App Router) + TypeScript + Tailwind CSS,
   built as a static export (`output: "export"`) for GitHub Pages
-- [Supabase](https://supabase.com) (Postgres) for shared directory/purchase
-  data, queried directly from the browser
+- No backend, no accounts — all state (your measurements, saved garments)
+  lives in the browser's `localStorage`
