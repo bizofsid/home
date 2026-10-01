@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#142419"/>
+  <!-- trimmed grass: blades cut flat along one line -->
+  <g fill="#ff6a13">
+    <path d="M118 400 L150 214 L196 214 L186 400 Z"/>
+    <path d="M206 400 L216 214 L262 214 L254 400 Z"/>
+    <path d="M274 400 L282 214 L328 214 L330 400 Z"/>
+    <path d="M350 400 L348 214 L394 214 L402 400 Z"/>
+  </g>
+  <rect x="96" y="176" width="320" height="14" rx="7" fill="#eef1e8"/>
+  <rect x="96" y="400" width="320" height="22" rx="4" fill="#2c6a3a"/>
+</svg>

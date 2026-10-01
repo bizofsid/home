@@ -1,0 +1,26 @@
+{
+  "name": "itrimit",
+  "version": "1.0.0",
+  "description": "Hours, gear lists and gear notes for a landscaper. Phone web app + Android APK.",
+  "scripts": {
+    "build": "node build.mjs",
+    "android:assets": "node scripts/android-assets.mjs",
+    "build:apk": "node build.mjs --apk && cap sync android && cd android && ./gradlew assembleDebug && cp app/build/outputs/apk/debug/app-debug.apk ../iTrimIt.apk"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
+    "esbuild": "^0.28.2",
+    "sharp": "^0.35.5"
+  },
+  "type": "module",
+  "dependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/core": "^8.5.2"
+  },
+  "private": true
+}

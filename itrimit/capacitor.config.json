@@ -1,0 +1,8 @@
+{
+  "appId": "nz.itrimit.app",
+  "appName": "iTrimIt",
+  "webDir": "dist/web",
+  "android": {
+    "backgroundColor": "#eef1e8"
+  }
+}
