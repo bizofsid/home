@@ -5,7 +5,7 @@
   "scripts": {
     "build": "node build.mjs",
     "android:assets": "node scripts/android-assets.mjs",
-    "build:apk": "node build.mjs --apk && cap sync android && cd android && ./gradlew assembleDebug && cp app/build/outputs/apk/debug/app-debug.apk ../iTrimIt.apk"
+    "build:apk": "node scripts/build-apk.mjs"
   },
   "keywords": [],
   "author": "",

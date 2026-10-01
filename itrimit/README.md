@@ -7,9 +7,11 @@ Clock hours, pack and pin gear lists to jobs, log gear use per site, keep gear m
 
 ## Android APK
 
-Needs JDK 21 and the Android SDK (platform 36, build-tools 35) with network access to Google's Maven (dl.google.com).
+Needs JDK 21 (Android Studio's bundled one works) and the Android SDK. Gradle fetches anything missing.
 
-    echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-    npm run build:apk      # web build without service worker → cap sync → gradlew assembleDebug → ./iTrimIt.apk
+    npm run build:apk -- "C:/Users/you/Documents/coding/Android/Sdk"   # first time: SDK path
+    npm run build:apk                                                  # after that
+
+Output: ./iTrimIt.apk (web build without service worker → cap sync → gradlew assembleDebug).
 
 After changing icon.svg: `npm run android:assets` (adaptive launcher icons + splash).
