@@ -27,6 +27,16 @@ export function gearByGroup(gear) {
 
 export const groupNames = (state) => gearByGroup(state.gear).map(({ group }) => group);
 
+/** Every bit name used on any gear item, for autocomplete. */
+export function bitNames(state) {
+  const names = new Map();
+  for (const bit of state.gear.flatMap((g) => g.bits)) names.set(bit.name.toLowerCase(), bit.name);
+  return [...names.values()].sort((a, b) => a.localeCompare(b));
+}
+
+/** "Trimmer line ×2, Spark plug" */
+export const bitsSummary = (gear) => gear.bits.map((bit) => (bit.qty > 1 ? `${bit.name} ×${bit.qty}` : bit.name)).join(', ');
+
 export const listsAt = (state, jobId) => state.lists.filter((l) => l.jobId === jobId);
 
 export function listProgress(list) {

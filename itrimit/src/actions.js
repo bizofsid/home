@@ -1,7 +1,7 @@
 // Pure state transitions. Each takes the current state and returns the next one.
 // Nothing here reads the clock or storage; callers pass `now`.
 
-import { newId, EMPTY_STATE } from './store.js';
+import { newId, EMPTY_STATE, upgrade } from './store.js';
 import { isOpen } from './shift.js';
 
 const UTE = null; // jobId for gear that's on the ute / back at the yard
@@ -36,7 +36,7 @@ export function updateUser(state, { name, employer, rate }) {
 /** Swap in a whole saved state (restore or erase). Keys outside the schema are dropped. */
 export function replaceAll(_state, { next }) {
   const known = Object.keys(EMPTY_STATE).map((key) => [key, next[key] ?? EMPTY_STATE[key]]);
-  return Object.fromEntries(known);
+  return upgrade(Object.fromEntries(known));
 }
 
 // ── clock ────────────────────────────────────────────────
@@ -97,7 +97,7 @@ export function deleteJob(state, { id }) {
 // ── gear ─────────────────────────────────────────────────
 
 function makeGear(name, group, qty = 1) {
-  return { id: newId(), name, group, qty, checkedAt: null, notes: [] };
+  return { id: newId(), name, group, qty, checkedAt: null, notes: [], bits: [] };
 }
 
 export function addGear(state, { name, group, qty }) {
@@ -131,6 +131,32 @@ export function deleteGearNote(state, { gearId, noteId }) {
     ...state,
     gear: replaceById(state.gear, gearId, (g) => ({ ...g, notes: g.notes.filter((n) => n.id !== noteId) })),
   };
+}
+
+// ── bits & spares (the small stuff that goes with a gear item) ──
+// Bit: { id, name, qty }
+
+const sameName = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+const updateBits = (state, gearId, update) => ({
+  ...state,
+  gear: replaceById(state.gear, gearId, (g) => ({ ...g, bits: update(g.bits) })),
+});
+
+/** Add a bit to a gear item. Adding a name it already has tops up that bit instead. */
+export function addBit(state, { gearId, name, qty }) {
+  return updateBits(state, gearId, (bits) => {
+    const existing = bits.find((bit) => sameName(bit.name, name));
+    if (existing) return replaceById(bits, existing.id, (bit) => ({ ...bit, qty: bit.qty + qty }));
+    return [...bits, { id: newId(), name, qty }];
+  });
+}
+
+/** Set how many of a bit there are. 0 removes it. */
+export function setBitQty(state, { gearId, bitId, qty }) {
+  return updateBits(state, gearId, (bits) => (qty <= 0
+    ? bits.filter((bit) => bit.id !== bitId)
+    : replaceById(bits, bitId, (bit) => ({ ...bit, qty }))));
 }
 
 // ── gear lists (kits) ────────────────────────────────────

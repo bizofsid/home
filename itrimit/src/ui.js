@@ -139,6 +139,11 @@ export function jobSelect({ id, jobs, value, onChange, uteLabel }) {
   );
 }
 
+/** "1 item", "3 items" */
+export function counted(n, word) {
+  return `${n} ${word}${n === 1 ? '' : 's'}`;
+}
+
 export function pill(text, tone = '') {
   return h('span', { class: `pill ${tone}` }, text);
 }

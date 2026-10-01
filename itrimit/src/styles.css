@@ -247,6 +247,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--ink); outline: n
 .pack-row.done .tick { background: var(--leaf); border-color: var(--leaf); color: var(--surface); }
 .pack-row.done .pack-name { color: var(--muted); }
 .pack-of { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.pack-label { display: flex; flex-direction: column; min-width: 0; overflow-wrap: anywhere; }
+.pack-label small { font-weight: 400; font-size: 14px; color: var(--muted); }
+.bit-count { font-size: 14px; color: var(--muted); white-space: nowrap; }
 .list-block { display: flex; flex-direction: column; gap: 10px; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
 .list-block-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .list-block-head h3 { font: 700 22px var(--font-display); }

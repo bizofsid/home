@@ -3,12 +3,20 @@
 
 import { h, icon, stepper, pill } from '../ui.js';
 import { countPacked, packAll } from '../actions.js';
-import { gearById, listProgress } from '../select.js';
+import { gearById, listProgress, bitsSummary } from '../select.js';
 
 export function progressPill(list) {
   const { needed, packed, complete } = listProgress(list);
   if (needed === 0) return pill('Empty', 'muted');
   return pill(complete ? 'All packed' : `${packed}/${needed} packed`, complete ? 'good' : 'warn');
+}
+
+/** Gear name, with its bits underneath so the small stuff gets packed too. */
+function packLabel(gear) {
+  return h('span', { class: 'pack-label' },
+    gear.name,
+    gear.bits.length ? h('small', {}, `with ${bitsSummary(gear)}`) : null,
+  );
 }
 
 export function packChecklist({ state, act }, list) {
@@ -26,7 +34,7 @@ export function packChecklist({ state, act }, list) {
         class: 'pack-name',
         'aria-label': `Mark all ${gear.name} packed`,
         onClick: () => act(countPacked, { listId: list.id, gearId: gear.id, delta: item.qty }),
-      }, h('span', { class: 'tick' }, done ? icon('check', 16) : null), gear.name),
+      }, h('span', { class: 'tick' }, done ? icon('check', 16) : null), packLabel(gear)),
       h('span', { class: 'pack-of' }, `of ${item.qty}`),
       stepper({
         value: item.packed,

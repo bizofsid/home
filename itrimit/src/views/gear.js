@@ -1,11 +1,11 @@
 // Gear tab: gear under subheadings with maintenance notes, and gear lists (kits).
 
-import { h, icon, openSheet, stepper, confirmButton, pill, jobSelect, toast } from '../ui.js';
+import { h, icon, openSheet, stepper, confirmButton, pill, counted, jobSelect, toast } from '../ui.js';
 import {
   addGear, updateGear, deleteGear, checkGear, addGearNote, deleteGearNote,
-  addList, renameList, deleteList, setListItemQty, pinList,
+  addList, renameList, deleteList, setListItemQty, pinList, addBit, setBitQty,
 } from '../actions.js';
-import { gearByGroup, groupNames, hasOpenFault, activeJobs, jobName, UTE_LABEL } from '../select.js';
+import { gearByGroup, groupNames, bitNames, hasOpenFault, activeJobs, jobName, UTE_LABEL } from '../select.js';
 import { isSameDay, formatDay, formatTime } from '../time.js';
 import { packChecklist, progressPill } from './packing.js';
 import { usedAtSection } from './usage.js';
@@ -54,6 +54,7 @@ function gearRow(ctx, gear) {
       h('span', { class: 'gear-name' }, gear.name),
       h('span', { class: 'gear-meta' },
         gear.qty > 1 ? h('span', { class: 'qty' }, `×${gear.qty}`) : null,
+        gear.bits.length ? h('span', { class: 'bit-count' }, `+${counted(gear.bits.length, 'bit')}`) : null,
         hasOpenFault(gear) ? pill('Fault', 'bad') : null,
       ),
     ),
@@ -139,6 +140,7 @@ function gearSheetBody({ state, act, now }, gearId, close) {
         if (el.tagName === 'INPUT') el.addEventListener('change', () => act(updateGear, { id: gear.id, changes: { group: el.value.trim() || 'Other' } }));
         return el;
       })),
+    bitsSection({ state, act }, gear),
     h('form', { class: 'note-form', onSubmit: addNote },
       h('span', { class: 'label' }, 'Maintenance notes'),
       h('div', { class: 'chips' }, kindButtons),
@@ -157,6 +159,36 @@ function gearSheetBody({ state, act, now }, gearId, close) {
       : h('p', { class: 'muted' }, 'No notes yet.'),
     usedAtSection(state, gear.id),
     confirmButton('Remove this gear', () => { act(deleteGear, { id: gear.id }); close(); }),
+  );
+}
+
+// ── bits & spares ────────────────────────────────────────
+
+function bitsSection({ state, act }, gear) {
+  const inputId = `bit-name-${gear.id}`;
+  const nameInput = h('input', {
+    id: inputId, list: 'bit-names', autocomplete: 'off', enterKeyHint: 'done',
+    placeholder: 'e.g. Trimmer line, spark plug',
+  });
+  const add = (event) => {
+    event.preventDefault();
+    const name = nameInput.value.trim();
+    if (!name) return;
+    act(addBit, { gearId: gear.id, name, qty: 1 });
+    document.getElementById(inputId)?.focus(); // the sheet re-rendered: keep typing the next one
+  };
+
+  return h('section', { class: 'stack' },
+    h('h3', { class: 'subhead' }, 'Bits & spares'),
+    gear.bits.length
+      ? h('ul', { class: 'rows' }, gear.bits.map((bit) => h('li', { class: 'qty-row in' },
+          h('span', { class: 'gear-name' }, bit.name),
+          stepper({ value: bit.qty, label: bit.name, onStep: (d) => act(setBitQty, { gearId: gear.id, bitId: bit.id, qty: bit.qty + d }) }),
+        )))
+      : h('p', { class: 'muted' }, 'The small stuff this needs: line, plugs, spare blades, files.'),
+    h('form', { class: 'inline-add', onSubmit: add }, nameInput,
+      h('button', { class: 'icon-btn', 'aria-label': 'Add bit' }, icon('plus'))),
+    h('datalist', { id: 'bit-names' }, bitNames(state).map((name) => h('option', { value: name }))),
   );
 }
 
@@ -183,7 +215,7 @@ function listsPanel(ctx) {
       ? h('ul', { class: 'cards' }, state.lists.map((list) => h('li', {},
           h('button', { class: 'card list-card', onClick: () => openListSheet(ctx, list.id) },
             h('div', { class: 'card-top' }, h('h2', {}, list.name), progressPill(list)),
-            h('p', { class: 'muted' }, icon('pin', 14), ` ${jobName(state, list.jobId)} · ${list.items.length} items`),
+            h('p', { class: 'muted' }, icon('pin', 14), ` ${jobName(state, list.jobId)} · ${counted(list.items.length, 'item')}`),
           ))))
       : h('p', { class: 'empty' }, 'A list is a kit for a kind of job. Make one, set quantities, then pin it to a job.'),
   );

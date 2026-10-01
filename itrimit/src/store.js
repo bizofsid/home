@@ -5,7 +5,7 @@ const STORAGE_KEY = 'itrimit:v1';
 export const EMPTY_STATE = Object.freeze({
   user: null,   // { name, employer, rate }
   jobs: [],     // { id, name, createdAt, done }
-  gear: [],     // { id, name, group, qty, checkedAt|null, notes: [{ id, at, kind, text }] }
+  gear: [],     // { id, name, group, qty, checkedAt|null, notes: [{ id, at, kind, text }], bits: [{ id, name, qty }] }
   lists: [],    // { id, name, jobId|null, items: [{ gearId, qty, packed }] }
   shifts: [],   // see shift.js
   usage: [],    // { id, jobId, gearId, qty, at }: gear used on a job
@@ -19,10 +19,15 @@ export function isBackup(data) {
   return Boolean(data?.user?.name) && Array.isArray(data.shifts) && Array.isArray(data.gear) && listsOk;
 }
 
+/** Fill in fields that saves and backups from older versions don't have. */
+export function upgrade(state) {
+  return { ...EMPTY_STATE, ...state, gear: (state.gear ?? []).map((g) => ({ bits: [], ...g })) };
+}
+
 function readStorage() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...EMPTY_STATE, ...JSON.parse(raw) } : { ...EMPTY_STATE };
+    return raw ? upgrade(JSON.parse(raw)) : { ...EMPTY_STATE };
   } catch {
     return { ...EMPTY_STATE };
   }
